@@ -1,0 +1,1136 @@
+UNIX Commands
+
+---------------------
+
+Env setup:
+
+bash - start bash shell, should allow history with up/down arrows
+PS1="\h:\w > " - Set prompt to hostname and curr dir
+echo -e "\033]2;`hostname`\007" - Set cygwin window title (can use any text in place of "`hostname`"
+
+.bashrc file:
+
+PS1="\h:\w > "
+echo -e "\033]2;`hostname`\007"
+shopt -s checkwinsize
+alias cdlogs='cd /opt/fxall/logs'
+alias cddf='cd /opt/fxall/dealfeed'
+alias cdfix='cd /opt/fxall/mp-dealfeed-fix'
+alias ls='ls -lrt'
+alias tail='tail -1000f'
+alias fxall='sudo su - fxall'
+
+
+---------------------
+
+cd - (dash) : Returns to previous directory
+pushd /etc : store current directory and cd to new one
+popd : Return to previous pushed dir
+
+---------------------
+
+Find+Grep:   /usr/bin/find . -exec grep -H '/customfone/' {} \;
+(-H shows you the matching filename and line)
+
+Find+Grep:   /usr/bin/find . -name omsapi.*log -exec grep -l 'searchString' {} \;
+(-l shows you the matching filename only)
+
+If you get FIND: Parameter format not correct, you are using Windows find.  Use /usr/bin/find
+
+Find within gzipped files:
+find . -name tomcat_rfq*.log.20115311* -exec zgrep -l schwab {} \;
+
+------------------------
+
+Less commands:
+
+/ - search forward
+? - search backward
+	leave blank to repeat previous search or reverse previous search
+	can hit up or down arrows to scroll through prev searches
+n - next match
+p - previous match
+
+g (or p or shift-p) - jump to top
+1000g - jump to 1000th line
+shift-g - jump to bottom
+
+shift-f - tail the file
+
+= - display current lines
+-N - display line numbers
+-m - detailed prompt with line numbers
+
+m<letter> - mark position with letter
+'<letter> - jump to marked position
+
+
+------------------------------------
+
+VI commands:  http://www.cs.colostate.edu/helpdocs/vi.html
+
+i - insert (I - insert at beginning of line)
+a - append (A - append at end of line)
+esc - stop editing
+x - delete a char
+dd - delete a line (D - delete to end of line)
+u - undo
+r/R - replace one/many
+yy - copy current line (10yy - copy 10 lines)
+p - paste copied line
+:wq - Save and quit
+:q! - Quit without save
+0<return> - top of file
+$<return> - end of file
+ctrl-f - forward screen
+ctrl-b - back screen
+
+Visual mode:  Shift-v
+
+Allows you to highlight a block of text and hit "d" to delete.
+
+
+In vi, to replace all instances of a string in the entire file, with confirmation:
+ 
+:%s/search_string/replacement_string/gc
+ 
+Omit the ‘c’ at the end for no confirmation.  
+If you omit the ‘%’ at the beginning, it will replace all instances on the current line only.  
+If you omit the ‘g’ at the end, it will replace only the first instance found on each line.
+
+
+
+------------------------------------
+
+Run dos2unix on all files in a directory and subdirs recursively:
+
+find . -name *.* -exec dos2unix {} \;
+
+Exclude one single file, and don't run it on directories (gets an error):
+
+find . -type f -and ! -name mysql*.jar -exec dos2unix {} \;
+
+
+------------------------------------
+
+List all files in all subdirs with name and then size, sorted, so it can be diffed easily
+find . -printf "%p %s\n" | sort > files1
+
+
+Find and remove all CVS subdirectories:
+find . -name CVS -exec rm -rf {} \;
+
+Find and remove old files:
+find . -name CVS -exec rm -rf {} \;
+
+
+Find and list all files older than N days old.  Can change command from ls to rm to remove the files.
+find /opt/fxall/tomcat_altairadmin/logs -name "acct_import_*" -mtime +14 -type f -exec ls -l {} \;
+find . -mtime 14 -type f -exec ls -l {} \;
+
+Find and list all files older than a given date
+find <dir> -not -newermt 2010-01-01 (does not work on our servers!!!! Use mtime with number of days since the date using online days between calcs.)
+
+------------------------------------
+
+Find tomcat rfq log files from oct 2010 containing search string 
+find ./njoriapp*/tomcat_rfq*.log.201010*.gz -exec zgrep -l 'ClientAbortException:  java.net.SocketException: Connection timed out' {} \;
+
+or
+
+for i in njoriapp07 njoriapp08 njoriapp10 njoriapp11
+do
+	echo Processing $i
+	grep -l $i/tomcat_rfq.20101116*.log test
+done
+
+--------------------
+
+Grepping recursive directories:
+
+grep -rH hello *.txt  (current directory must have a *.txt file in it though)
+
+
+---------------------
+
+find files with matching filenames recursively:
+
+find . -name *2010428 -print
+
+-----------------------
+
+Grep with OR: grep "stringA\|stringB"
+
+-----------------------
+
+Grep lines before and after
+
+For GNU grep you can use -B num to set how many lines before the match and -A num for the number of lines after the match.
+
+grep -B 3 -A 2 foo README.txt
+
+If you want the same amount of lines before and after you can use -C num.
+
+grep -C 3 foo README.txt
+
+This will show 3 lines before and 3 lines after.
+
+------------------------
+
+xargs - 
+
+Process piped input(s) and do something.
+
+# Find files owned by a user and change to different user
+find . -type f -user dtemp -print0 | xargs -0 -n1 sudo chown homenas
+
+# Copy all the images to an external hard-drive.
+ls *.jpg | xargs -n1 -I{} cp {} /external-hard-drive/directory
+
+# Replace string1 in all files in current dir with string2
+grep -rl 'string1' * | xargs sed -ie 's/string1/string2/g'
+
+# Add delete.me file in every .git subdirectory.
+find . -type d | grep -v ".git" | xargs -I{} touch {}/delete.me
+
+find . -type d | grep -v ".git" | xargs -I _dir_ touch _dir_/delete.me
+
+-0 - handle inputs with spaces in them (filenames)
+
+-n1 - Use one input per command (In case command can take multiple inputs)
+
+{} - Specify input position in command if not at the end.
+
+-I{} - Use {} as variable for the xarg input in the command (when it needs to be in the middle of the command.)
+-I <replace_string> - Rename the {} to <replace_string> for easier reading.
+
+
+------------------------
+
+Grep text files with binary characters:
+
+cat -v filename | grep xxx
+
+------------------------
+
+Less commands:
+
+/ - search forward
+? - search backward
+	leave blank to repeat previous search or reverse previous search
+	can hit up or down arrows to scroll through prev searches
+n - next match
+p - previous match
+
+g (or p or shift-p) - jump to top
+1000g - jump to 1000th line
+shift-g - jump to bottom
+
+shift-f - tail the file
+
+= - display current lines
+-N - display line numbers
+-m - detailed prompt with line numbers
+
+m<letter> - mark position with letter
+'<letter> - jump to marked position
+
+
+
+
+-----------------------
+
+System info:
+
+dmesg - startup messages
+
+/var/adm/messages - console logs
+
+uname -a
+(= "Unix name" with option "all") Info on your (local) server. I can also use guname (in X-window terminal) to display the info more nicely.
+
+CPU info - Redhat:
+cat /proc/cpuinfo
+grep phys /proc/cpuinfo - count # of physical cpus
+
+cat /proc/meminfo
+
+
+cat /etc/redhat-release 
+
+-----------------------
+
+Redirect stderr: 2>&1
+
+------------------------
+
+heredoc - Provide input to a unix command from the stdinput until it reaches a delimiter string
+
+Ex:
+
+cat > test.txt << EOF
+> 1
+> 2
+> 3
+> 4
+> 5
+> EOF
+~ $ cat test.txt
+1
+2
+3
+4
+5
+
+
+------------------------
+
+top does not always show correct CPU usage.  Use ps -aux for CPU.  (Missing memory may be reserved by OS for caching file IO data, related to swappiness setting)
+
+------------------------
+SED:
+
+sed 's/scarlet/red/g' filename > new filename
+
+
+Use -i to update the file directly:
+
+sed -i 's/scarlet/red/g' filename
+
+
+Use -i.bak to create backup file and update
+
+sed -i.bak 's/scarlet/red/g' filename
+
+
+To update multiple files with the same sed command:
+
+find . -type f -print0 | xargs -0 sed -i 's/mifid-venue-shared-0\.0\.63\.jar/mifid-venue-shared-0\.0\.64\.jar/g'
+
+
+Delete lines from a file by line number:
+
+sed -e '5,10d;12d' file
+
+
+Remove \r from result of backtick exec command before storing in a variable:
+
+#!/bin/sh
+
+cd stage/build/java
+VER=`svnversion`
+echo svn version is ${VER}...
+
+VER2=`svnversion|sed 's/\r//'`
+echo svn version is ${VER2}...
+
+
+
+------------------------
+
+In vi, to replace all instances of a string in the entire file, with confirmation:
+ 
+:%s/search_string/replacement_string/gc
+ 
+Omit the ‘c’ at the end for no confirmation.  
+If you omit the ‘%’ at the beginning, it will replace all instances on the current line only.  
+If you omit the ‘g’ at the end, it will replace only the first instance found on each line.
+
+-------------------------::q
+
+free: show free memory
+
+/proc/sys/vm/swappiness - Linux setting to prevent swapping (0-100)
+
+
+alias more to less -- lets you highlight search matches (shows at top of screen)
+			/ - searchForward
+			? - searchBack
+			! - search modifier for non matching
+			n - repeat search (either direction)
+			N - reverse search
+
+			(prepend these commands with a number to jump)
+			CR - line forward (5CR = 5 lines forward)
+			y - line back
+			space - page forward
+			b - page backward
+			F - tail -f
+			g - first line
+			G - last line
+			p - jump to % of file
+
+
+
+# replace ctrl-lf with lf to remove ^M from DOS text files
+tr -d '\r' < original_filename > new_filename
+
+-----------------------------------------
+
+Multi-cpu top in linux - Press 1 in top to see a per-cpu breakdown of utilization
+
+
+-----------------------------------------
+
+Found a really cool new debugging technique!
+
+top -H
+
+http://javaeesupportpatterns.blogspot.ca/2012/02/prstat-linux-how-to-pinpoint-high-cpu.html
+
+On linux, since each java thread is a process, you can run the top command with –H to get see which thread is using the most CPU, and then convert the PID to hex, do a thread dump, and search for the hex PID to see the stack trace!
+
+Here's a sample top command which runs once, includes the full command line (so you can grep by zones=) and shows the thread PIDs.  It also sorts by the 9th column, which is the %CPU (highest at the bottom):
+
+top -b -n1 -c -H | grep zones=fb | sort -n -k9
+
+The last line output is:
+
+3796 fxall     20   0 1430m 975m  12m S  3.7  7.0 274:17.20 /opt/fxall/jdk7-32/bin/java -server -showversion -XX:MaxPermSize=64m -XX:+HeapDumpOnOutOfMemoryError -Xmx256m -Xms256m -XX:NewSize=64m -XX:MaxNewSize=64m -Dcom.gs.work=/opt/fxall/poms/live/work -Dcom.gs.deploy=/opt/fxall/poms/live/deploy -Dcom.gs.transport_protocol.lrmi.max-threads=1024 -Djsse.enableSNIExtension=false -verbose:gc -Dcom.gs.zones=fb -Dcom.gigaspaces.logger.Fxa
+
+3796 in hex is "ed4".  (http://www.binaryhexconverter.com/decimal-to-hex-converter  - Use lowercase letters!!!)
+
+Do a thread dump and then grep for "nid=0xed4".  I found it in the thread dump we took earlier:
+
+[gsc][1/20693]  "JMS Session Delivery Thread" daemon prio=10 tid=0xa91b1800 nid=0xed4 runnable [0x022c7000]
+[gsc][1/20693]     java.lang.Thread.State: RUNNABLE
+[gsc][1/20693]          at java.lang.Thread.yield(Native Method)
+[gsc][1/20693]          at progress.message.jimpl.Session.run(Unknown Source)
+[gsc][1/20693]          at progress.message.jimpl.cm.run(Unknown Source)
+
+That should show you which Java thread is the busiest one.  (Unfortunately, the CPU usage is very low now, so this does not tell us much but we can try again tomorrow…)
+
+-----------------------------------------
+
+Check for space hogs:
+
+du -chs *
+
+du -k --max-depth=3 --exclude=*lost*found* | sort –n
+
+du -k --max-depth=3 --exclude=*snapshot* | sort -n
+
+du -k --max-depth=3 | sort -n
+
+
+---------------------------------------
+
+Check who is using a port:
+
+netstat -a  | grep <port>
+
+or
+
+lsof -i | grep <port>
+
+----------------------------------------
+
+tar multiple files into one:
+
+tar -cvf nameoftar.tar file1 file2 file3
+
+
+-----------------------------------------
+
+Copying files to QA from pc:
+
+Problem is no home dir on QA server.
+
+scp from dev to dcmpdevapp01 (as bbruce, with home dir)
+
+ssh to dcmpqaapp05 (as bbruce, no home dir)
+
+cd to /tmp
+
+scp dcmpdevapp01:filename /tmp/filename 
+
+(scp needs a home directory when scping TO as server, but not when scping FROM a different server)
+
+Now sudo and copy the file.
+
+---------------------------------------
+
+cat from stdin into a file:
+
+cat > test
+<paste stuff here>
+asdfasd
+asdfasdf
+asdfasd
+<ctrl-d>
+
+----------------------------------
+
+good old ps command:
+
+/usr/ucb/ps -auxwwww  - Shows full command line arguments
+
+---------------------------------
+
+
+Sometimes it’s useful to look at the environment and command line for a process.  On Linux you can do this using the /proc file system.  To look at the environment use
+
+  perl -pe 's/\000/\n/g < /proc/<PID>/environ
+
+Where <PID> is the process ID.  Similarly
+
+  perl -pe 's/\000/\n/g < /proc/<PID>/cmdline
+
+Will display the command line, 1 argument per line.  Alternatively, for space separated use: 
+
+  perl -pe 's/\000/ /g < /proc/<PID>/cmdline
+
+ 
+
+------------------------------------
+
+sar - system activity report CPU
+sar -r - memory
+
+
+---------------------------------
+
+Solaris version info:
+
+uname -a
+SunOS dcfunapp03 5.8 Generic_117000-05 sun4u sparc SUNW,Sun-Fire-V240
+
+isainfo -kv
+64-bit sparcv9 kernel modules
+
+
+--------------------------------
+
+
+Linux version info:
+
+uname -a
+
+To check if 64 bit:
+uname -m
+x86_64 <- 64 bit
+x86 <- 32 bit
+
+
+-----------------------------------
+
+Looping over files:
+
+for f in njoriapp07 njoriapp08 njoriapp10 njoriapp11
+do
+	cd $f
+	for ff in tomcat_rfq*.log.201067* tomcat_rfq*.log.201068* tomcat_rfq*.log.201069* tomcat_rfq*.log.2010610* tomcat_rfq*.log.2010611*
+	do
+		#echo "Processing $f/$ff"
+		zgrep "event_ID=\"1101\"" $ff | grep "@maninvestments\|@alcatel\|@bcs\|@lanxess\|@sonyericsson\|@bluebay\|@admisi\|@lafarge\|@lloyds\|@panasonicgt\|@liverpool-victoria\|@harmonic\|@alstom\|@sonyuk\|@tci\|@adm\|@admf\|@amadeus\|@diageo\|@lenovo\|@conocophillips\|@total\|@panasonic\|@richemont\|@daiwaam\|@apmoller\|@bancamarch\|@swisslifezurich\|@fulcrum\|@mwace\|@dksh\|@mangroup\|@libertyship\|@akzo\|@statoil\|@sanofi\|@kasbank\|@cargotec" | wc -l
+
+
+	done
+	cd ..
+done
+
+
+For loop on a single line:
+
+# Loop over list of files within a file (all on one line):
+for ff in `cat files.txt`; do ls -l $ff; done
+
+--------------------------------------
+
+crontabs:
+
+crontab –l  > crontab.bak (backup entries)
+crontab –e (edit in vi)
+
+Format:
+[min] [hour] [dayofmonth] [month] [dayofweek] [command]
+* = every time (every minute, every day, etc)
+0,15,30,45 = every 15 minutes
+*/5 = every 5 minutes
+
+To run a job every 5 minutes, add this line:
+*/5 * * * * /opt/fxall/perfmonQOMSPERF.sh >> perfmon.log 2>&1
+
+Crontab tries to send email with any output of the job, unless you pipe to a file, or redirect to /dev/null
+
+When the command is executed, it runs as the user who loaded the crontab. but it does not run any login scripts, so paths and environment may not be set up properly.  Make sure paths are fully qualified.
+
+
+-----------------------------------------
+
+SSH tunneling:
+
+To create a tunnel from PC1 to PC3 via PC2.  The tunnel will look like a local port so you can use a application on PC1 to connect to PC3.
+
+When you run the ssh -L, it will open a SSH session and window which you should keep open.
+
+ssh <user>@<target_host> -N -L <local_port>:<localhost>:<remote_port>
+
+Specify the the username and server you are logging into. The -L <local_port>:<localhost>:<remote_port> is in the form of -L local-port:host:remote-port. Finally the -N instructs OpenSSH to not execute a command on the remote system. 
+
+If you want to run it in the background, you can add a -f after the ssh:
+
+ssh -f <user>@<target_host> -N -L <local_port>:<localhost>:<remote_port>
+
+The -f tells ssh to go into the background just before it executes the command.
+
+You need to keep the shell window where you ran the command open or the connections will close.
+
+PERF YOURKIT:
+ssh -f bbruce@vaptpoms01.fxall.com -N -L 9009:localhost:9009
+
+PERF LDAP:
+ssh -f bbruce@vaptldap01.fxall.com -N-L 389:localhost:389
+
+COB LDAP:
+ssh -f bbruce@vacobpoms01.fxall.com -N-L 389:valdap01:389
+
+Credit Suisse:
+ssh -f bbruce@nuobintapp04 -N -L 26714:199.53.16.134:26714
+
+Goldman RFQ:
+ssh -f bbruce@nuobintapp04 -N -L 40366:204.4.187.56:40366
+
+
+To tunnel to a server when the server port is not open:
+
+Ex.  To get to LDAP on dcfunsso01 port 7389 which is not open to my local pc, set up a SSH tunnel from the PC to dcxqaadmin01, and then to the ldap server.  On the local PC, use "localhost" port 8389.
+
+ssh -f bbruce@dcxqaadmin01 -N -L 8389:dcfunsso01:7389
+
+Note: If I use 389 as the local port, I get an error in Cygwin - Channel 2: open failed: administratively prohibited: open failed
+Use a higher port like 8389.
+
+
+--------------------------------------------
+
+
+Batch top in script:
+
+top -b -c -n1 | grep tcpi2.qoms15 | grep -v grep | awk {'print $10'}
+
+
+--------------------------------------------
+
+Repeat command at intervals:
+
+watch -d ls -l
+
+
+---------------------------------------------
+
+remove \r from result of backtick exec command before storing in a variable:
+
+#!/bin/sh
+
+cd stage/build/java
+VER=`svnversion`
+echo svn version is ${VER}...
+
+VER2=`svnversion|sed 's/\r//'`
+echo svn version is ${VER2}...
+
+
+---------------------------------------------
+
+List/delete files older than N days:
+
+find /opt/fxall/tomcat_altairadmin/logs -name "acct_import_*" -mtime +30 -type f -exec ls -l {} \;
+
+---------------------------------------------
+
+Could distinct values from a file:
+
+cat   20120617AA-thump.txt | awk -F, '{ print $1 }' | awk '{count[$1]++}END{for(j in count) print j,"("count[j]")"}'
+
+Also look at "cut" command
+
+
+---------------------------------------------
+
+Fork process with nohup and redirect stderr to stdout:
+
+nohup java -jar blaa bla >/tmp/test.out 2>&1 &
+
+
+---------------------------------------------
+
+Cound how many threads a java process has:
+
+ulimit -a = check the limits
+
+core file size          (blocks, -c) 0
+data seg size           (kbytes, -d) unlimited
+scheduling priority             (-e) 0
+file size               (blocks, -f) unlimited
+pending signals                 (-i) 126730
+max locked memory       (kbytes, -l) 64
+max memory size         (kbytes, -m) unlimited
+open files                      (-n) 65535
+pipe size            (512 bytes, -p) 8
+POSIX message queues     (bytes, -q) 819200
+real-time priority              (-r) 0
+stack size              (kbytes, -s) 10240
+cpu time               (seconds, -t) unlimited
+max user processes              (-u) 16384 <------------- Max number of threads allowed per user
+virtual memory          (kbytes, -v) unlimited
+file locks                      (-x) unlimited
+
+
+
+ps -flm --pid <nnn> = list threads
+
+Script to monitor number of threads for a process:
+
+/tmp/fxallthreads:
+for i in `ps -ef |grep GSC |awk  '{print $2}'`
+do
+echo -n "pid $i="
+ps -flm  --pid $i |wc -l
+done
+
+-------------------------------------------------
+
+ps grep to get PIDs as a list and process them:
+
+ps -ef | grep whatever | awk '{ print $2 }'
+
+PIDS=`ssh -o BatchMode=yes -q ${USER}@${SERVER} ps -ef | grep -i sonic | grep java | awk '{ print \$2 }'`
+for PID in $PIDS
+do
+	OUTPUT=`ssh -o BatchMode=yes -q ${USER}@${SERVER} $JAVA_HOME/bin/jstat -gcutil $PID`
+	echo $SERVER: Sonic: $DATE: $OUTPUT >> $LOGFILE
+done
+
+
+------------------------------------------------
+
+getent - see members of a group:
+
+getent group | grep userid
+
+getent passwd | grep userid
+
+
+
+--------------------------------------------------
+
+Checking process memory and free memory:
+
+free - Look at the "-/+ buffers/cache" line which exclude memory used for disk i/o caching.
+
+ps -p $PID -o pid= -o vsz= -o rss= -o pcpu=
+
+
+java process memory:
+
+http://docs.oracle.com/javase/7/docs/technotes/tools/share/jstat.html#options
+
+Using a process with -Xms32m -Xmx256m:
+
+All memory in KB
+
+/opt/fxall/jdk7-32/bin/jstat -gccapacity 4831
+
+NGCMN    NGCMX     NGC     S0C   S1C       EC        OGCMN      OGCMX       OGC         OC      PGCMN    PGCMX     PGC       PC     YGC    FGC
+  2496.0  20160.0   2816.0  256.0  256.0   2304.0    30272.0   241984.0    30272.0    30272.0   4096.0  65536.0  15616.0  15616.0   4025     3
+
+OGCMN = Min capacity old space = 30.2MB
+OGCMV = Max capacity = 241.9MB
+OGC = Current capacity (Not usage!) = 30.2MB (Same as OC?)
+
+
+/opt/fxall/jdk7-32/bin/jstat -gc 4831
+
+S0C    S1C    S0U    S1U      EC       EU          OC             OU           PC     PU    YGC     YGCT    FGC    FGCT     GCT
+256.0  256.0   0.0   144.8   2304.0   705.9    30272.0    27776.9   15616.0 15523.5   4025    6.633   3      0.296    6.929
+
+OC = Current old space capacity (Not usage, can grow to OGCMX) = 30.2MB
+OU = Current old space utilization = 27.7MB
+
+
+/opt/fxall/jdk7-32/bin/jstat -gcutil 4831
+
+  S0     S1     E           O         P     YGC     YGCT    FGC    FGCT     GCT
+  0.00  56.56  31.80  91.76  99.41   4025    6.633     3    0.296    6.929
+
+O = Current old space utilization in % = 91.7%
+
+NOTES: Current utilization % is relative to current capacity, which is not the same as max capacity.  So 90% does not always means you will run out of memory.  The VM can increase the current capacity further, up to the max limit.
+
+
+-----------------------------------------------------
+
+netcat for Core ops commands:
+
+echo "ls" | nc -i1 -w1 vacqad00.fxall.com 1528
+
+-i1 allows time for the command to get send and processed.
+-w1 adds delay between send and receive of commands
+
+-----------------------------------------------------
+
+To listen on a port to test connections, use netcat in listener mode:
+
+nc -l 1234
+
+To log and forward the messages like a sniffer:
+
+mkfifo pipe
+
+nc -l [local port] < pipe | nc [server] [server port] | tee pipe
+
+With logging:
+nc -l [local port] < pipe | tee outgoing.log | nc [server] [server port] | tee pipe incoming.log
+
+Ex.
+mkfifo brianpipe
+nc -l 9081 < brianpipe | nc localhost 9080 | tee brianpipe
+
+
+--------------------------------------------------------
+
+wget commands to test web URLs
+
+By default, wget tries to create files to save the response.  You can print output to stdout using -O- flag.  
+
+wget -O- http://www.qa.fxall.com
+
+wget -O- --header="host:www.qa.fxall.com" http://vaxwqawebpor01.fxall.com  <-- Set a header
+
+Download a directory:
+
+wget -r --no-parent --level=1 -nH --cut-dirs=4 --reject="index.html*" http://vastage01.fxall.com/va/core/eikon/release-6.8.0.78/include_CORE/
+
+-r = recursive
+--level=1 = Don't copy anything above the directory
+-nH = No hostname (otherwise a local directory with the hostname will be created)
+--cut-dirs=4 = Prevent va, core, eikon, release... from being created as local dirs (count the /s in the URL path)
+--reject="index.html*" = Don't create index.html files (which are not even there).
+
+---------------------------------------------------------
+
+curl commands to test web URLs
+
+See sample scripts for TRowe and AAA for more advanced stuff like cookies, and login, etc.
+
+curl -v -k --request GET http://$AAAENV/eikon/authsession/users/${ENCODED}?epaid=B86D7310DAA9B72EE5D0D
+
+## Sample with header and some content (blank)
+curl -v -k --request GET --header "Content-Type: application/json" --data '{}' http://$AAAENV/eikon/accounts/users/dev_brian.bruce@thomsonreuters.com?access_token=${ENCODED}&attr_list=*
+
+## Sample with some POST content, which is read from STDIN (aka "heredoc" format)
+curl -k --request POST --header "Content-Type:text/xml" --data @- http://$AAAENV/aaa/services/AAA-ASUserManagementPort << EOF
+<?xml version="1.0" encoding="UTF-8"?>
+<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:aaa="http://www.reuters.com/ns/2008/08/15/webservices/AAA-AccessServices_1">
+   <soapenv:Header />
+   <soapenv:Body>
+      <aaa:GetAllUserDetails>
+         <aaa:uuid>$AAAUUID</aaa:uuid>
+      </aaa:GetAllUserDetails>
+   </soapenv:Body>
+</soapenv:Envelope>
+EOF
+
+
+-------------------------------------------------------
+
+Sort by specific columns, and remove duplicate likes starting with first X chars:
+
+sort -k2,7 - sort by Column 2, first 7 chars 
+
+uniq -w 17 - Remove duplicates in the first 1-17 chars
+
+tail -100 /opt/fxall/logs/jstatLogger.log | grep "tcpi-" | uniq -w 17 | sort -k2,7 | tail -20 | awk '{ if ($22 >= 85) print $1 " " $2 "\t\t"  $3 " " $4 " " $5 " " $6 " " $7 " " $8 "\t" $22 }' 
+
+
+-------------------------------------------------------
+
+Create nested directories:
+
+mkdir -p com/fxall/util/db
+
+
+--------------------------------------------------------
+
+Formatting date for log file names:
+
+export MYDATE=`date +"%Y%m%d"`
+
+20150505
+
+# With time
+
+date +'%Y%m%d:%H:%M:%S'
+20171229:16:37:26
+
+# Subtract 20 mins:
+
+date --date '-20 min' +'%Y%m%d:%H:%M:%S'
+
+
+
+-------------------------------------------------------
+
+To clear out a file without deleting the inode itself:
+
+cat /dev/null > test.log
+
+
+-------------------------------------------------------
+
+grep for ctrl-m (control M) characters:
+
+grep -rl $'\r' *  (Does not always work on PCs with cygwin)
+
+cat -v  : will show the characters.  VI shows sometimes.  Not always.
+
+To create a ctrl-M char manually: ctrl-v ctrl-m
+
+To run dos2unix recursively:
+
+find ./bin -type f -exec dos2unix {} \; 
+
+
+
+
+--------------------------------------------------------
+
+Linux drop caches - http://linux-mm.org/Drop_Caches
+
+This is a non-destructive operation and will only free things that are completely unused. 
+Dirty objects will continue to be in use until written out to disk and are not freeable. 
+If you run "sync" first to flush them out to disk, these drop operations will tend to free more memory. 
+
+# echo 1 > /proc/sys/vm/drop_caches
+
+To free dentries and inodes:
+
+# echo 2 > /proc/sys/vm/drop_caches
+
+To free pagecache, dentries and inodes:
+
+echo 3 > /proc/sys/vm/drop_caches
+
+
+---------------------------------------------------------
+
+Tail + Grep
+
+tail -n 100 -f file | grep --line-buffered "test" | grep --line-buffered "test2"
+
+When tailing and grepping, the pipe ("|") can buffer lines.  You need to add --line-buffered to the grep to prevent the buffering.  Otherwise, the most recent lines will not show up until more lines get matched.
+
+Also, you can't use -100f with multiple files (*).  Use "-n 100 -f" instead.
+
+tail -n 100 -f *.log | grep --line-buffered "STATS: Send: sQ:"
+
+
+---------------------------------------------------------
+
+Netstat commands:
+
+netstat -an|awk '/tcp/ {print $6}'|sort|uniq -c  - Lists count of connections by state:
+
+   4375 CLOSE_WAIT
+   4477 ESTABLISHED
+      3 FIN_WAIT2
+     75 LISTEN
+    253 TIME_WAIT
+
+netstat -an|grep "\:90"| awk '/tcp/ {print $6}'|sort|uniq -c - POMS sockets
+
+
+-------------------------------------------------------
+
+CPU Load averages:
+
+http://blog.scoutapp.com/articles/2009/07/31/understanding-load-averages
+
+Per cpu:
+<1.00 = underutilized
+1.00 = 100% utilization with no waiting processes
+>1.00 = processes waiting.
+
+If 8 core, 8.00 = 100% utilization, 24 core = 24.00, etc.
+
+top shows load averages in 3 numbers:  
+
+top - 20:09:15 up 5 days,  1:31,  7 users,  load average: 0.80, 0.29, 0.22 <-- Average over last 1 minute, 5 minutes, 15 minutes.
+
+-------------------------------------------------------
+
+
+Apache ListenBacklog queue size:
+
+If apache cannot process requests fast enough, the listen queue for the socket may overflow.  (We saw this).
+
+To check the overflow:
+
+netstat –st | grep listen
+    14 times the listen queue of a socket overflowed
+
+
+To check current queue size:
+
+ss -lti '( sport = :http )'
+State       Recv-Q Send-Q       Local Address:Port         Peer Address:Port
+LISTEN      0      128                     *:http                       *:*
+          rto:1000 cwnd:10
+
+
+Queue size depends on:
+
+# /etc/sysctl.conf :
+net.ipv4.tcp_max_syn_backlog = 2048  <-- Are you planning to change this?
+net.core.somaxconn = 1024 (default is 128)
+net.ipv4.tcp_syncookies = 1 <-- And do we need this?
+
+Apache httpd.conf:
+ListenBacklog 1023 (default is 511 but effective default is 128 - same as somaxconn)
+
+See:
+https://httpd.apache.org/docs/2.4/mod/mpm_common.html#listenbacklog
+http://www.beingroot.com/articles/apache/socket-backlog-tuning-for-apache
+http://www.ryanfrantz.com/posts/apache-tcp-backlog/
+
+------------------------------------------------------
+
+Split a file into multiple subfiles based on a separator line value.  Then count number of lines in each subfile and display as a sorted list.
+
+Sample: 
+
+Grep for zzz and apache24, then split on zzz, then count:
+
+zzz ***Wed Dec 2 12:00:01 EST 2015
+F S UID        PID  PPID  C PRI  NI ADDR SZ WCHAN  STIME TTY          TIME CMD
+4 S root         1     0  0  80   0 -  5331 poll_s Nov28 ?        00:00:04 /sbin/init
+1 S root         2     0  0  80   0 -     0 kthrea Nov28 ?        00:00:00 [kthreadd]
+1 S root         3     2  0 -40   - -     0 migrat Nov28 ?        00:00:01 [migration/0]
+1 S root         4     2  0  80   0 -     0 ksofti Nov28 ?        00:00:31 [ksoftirqd/0]
+1 S root         5     2  0 -40   - -     0 cpu_st Nov28 ?        00:00:00 [migration/0]
+1 S root         7     2  0 -40   - -     0 migrat Nov28 ?        00:00:00 [migration/1]
+1 S root         8     2  0 -40   - -     0 cpu_st Nov28 ?        00:00:00 [migration/1]
+1 S root         9     2  0  80   0 -     0 ksofti Nov28 ?        00:00:03 [ksoftirqd/1]
+1 S root        11     2  0 -40   - -     0 migrat Nov28 ?        00:00:00 [migration/2]
+
+grep "zzz\|apache24" /infra/osw/archive/backup-20151203/oswps/njpoms01_ps_15.12.02.1200.dat | awk '/zzz/{x="F"++i;next}{print > x;}'
+
+rm apachePSCounts.txt; for ff in F*; do wc -l $ff | awk '{print $2 " " $1;}' >> apachePSCounts.txt; done; sort -k1.2,1n apachePSCounts.txt
+
+F1 123
+F2 123
+F3 122
+F4 122
+F5 122
+F6 122
+F7 122
+F8 122
+F9 122
+F10 122
+F11 122
+F12 122
+F13 121
+F14 120
+F15 117
+F16 116
+F17 112
+F18 104
+F19 98
+F20 88
+F21 83
+F22 77
+F23 74
+F24 73
+F25 70
+...
+
+-----------------------------------------------------------
+
+ss command - like Netstat but better?
+
+http://www.binarytides.com/linux-ss-command/
+
+Socket summary:
+
+[bbruce@njpoms01 tmp]$ ss -s
+Total: 12317 (kernel 12547)
+TCP:   12153 (estab 3684, closed 270, orphaned 0, synrecv 0, timewait 269/0), ports 8805
+
+Sockets in syn-recv state:
+
+[bbruce@njpoms01 tmp]$ ss -4t state syn-recv
+Recv-Q Send-Q                                                                               Local Address:Port                                                                                   Peer Address:Port
+
+
+Show tcp listenBacklog queue size for http
+
+ss -lti '( sport = :http )'  
+
+---------------------------------------------------------
+
+pkill -f <regexp> - use -f to match entire command, not just the executable name
+
+Ex. 
+
+pkill -f .*banksim.*
+
+
+
+----------------------------------------------------------
+
+Commandline navigation keys:
+
+    Ctrl-A: go to the beginning of line
+    Ctrl-E: go to the end of line
+
+    Alt-B: skip one word backward
+    Alt-F: skip one word forward
+
+    Alt-D: delete word forward (excludes curr char.  stop on first letter)
+    Ctrl-W: delete word backward (excludes curr char.  stop on space after)
+
+    Ctrl-B: back 1 char
+    Ctrl-F: forward 1 char
+    Ctrl-D: delete 1 char forward
+    Ctrl-U: delete to the beginning of line
+    Ctrl-K: delete to the end of line
+
+Ctrl + A 	Go to the beginning of the line you are currently typing on
+Ctrl + E 	Go to the end of the line you are currently typing on
+Ctrl + L               	Clears the Screen, similar to the clear command
+Ctrl + U 	Clears the line before the cursor position. If you are at the end of the line, clears the entire line.
+Ctrl + H 	Same as backspace
+Ctrl + R 	Let’s you search through previously used commands
+Ctrl + C 	Kill whatever you are running
+Ctrl + D 	Exit the current shell
+Ctrl + Z 	Puts whatever you are running into a suspended background process. fg restores it.
+Ctrl + W 	Delete the word before the cursor
+Ctrl + K 	Clear the line after the cursor
+Ctrl + T 	Swap the last two characters before the cursor
+Esc + T 	Swap the last two words before the cursor
+Alt + F 	Move cursor forward one word on the current line
+Alt + B 	Move cursor backward one word on the current line
+Tab 		Auto-complete files and folder names
+
+----------------------------------------------------------
+
+Thread counts:
+
+To see how many total Apache threads are running under all processes
+
+ps -eLf | grep httpd
+
+Or:
+
+top -b -n1 -H | grep apache24 | wc -l
+
+----------------------------
+
+To check CNAME record:
+
+    > host -t cname _c33bed5a31ce327a1bdade02ffb18ce2.photos.edx.castor.nyc.  
+
+    _c33bed5a31ce327a1bdade02ffb18ce2.photos.edx.castor.nyc is an alias for _d80585a3a31684ff7f89fe639a000d41.acm-validations.aws.
+
+-----------------------------

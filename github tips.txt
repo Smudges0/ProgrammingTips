@@ -1,0 +1,190 @@
+=============================
+Github tips
+=============================
+
+Use Sourcetree as front end
+
+Generate ssh keys using cygwin and openssh or Windows and Puttygen.
+
+Private keys stored in Frostbite in C:\Users\Brian\Documents\_Tech Info & Serial Numbers\Public Private Keys
+
+Public keys stored in OneDrive in C:\Users\Brian\SkyDrive\Documents\sshPublicKeys
+
+When adding public key to Github, if the public key string does not start with "ssh-rsa ", you need to add it (puttygen).
+
+Ex:
+
+ssh-rsa (1 space after, and then newline, then paste the public key string)
+AAAAB3NzaC1yc2EAAAABJQAAAQEArB7uM/4H7PsQ3JKtK0UHyfBOD0Mcr382bthh
++o0qoJOuFKCD6ziy6YCMNNc6HEYX6olXYZRhzHpStV0a8WgZ/zip3UGw/65BmXJi
+US30Gl2na48+g0Ydyt2RlBBlz+zUTlg5MCf+lP5ILWZ4TI7+FV98BXcvX7uhTi4F
+opY6Vnzwu6fqfbu5E4ZCh+V1d/usAUek111rVdIvjnTNwxXVVA2zkmOQ3yOpY44U
+MEfZpkMC/DBkXHA2PeUDzD9b+/XRa5AXMrVWo4oQAGJjWFbBK11dlBsgR0zwLlSy
+k+FI/4lmQfNiv0uBdBUpk/mRGBI7RICYouRKKiSko8h8s6T+9w==
+
+------------------------------
+
+Use opensource MIT license.
+
+------------------------------
+
+Connect local folder and files with a new github repository.
+
+Create the Git repo in Github, but do not add any files like README.MD, or .gitignore, etc (otherwise, you will get errors)
+
+Copy the URL for the repo.
+
+In your new local directory, run these commands (Use SourceTree's Git shell):
+
+From: https://help.github.com/articles/adding-an-existing-project-to-github-using-the-command-line/
+
+    # Initialize the local directory as a Git repository.
+    git init 
+    
+    # # Adds the files in the local repository and stages them for commit. 
+    git add . 
+    
+    # Commit the files that you've staged in your local repository.
+    git commit -m "first commit" 
+    
+    # Sets the new remote
+    git remote add origin https://github.com/brbruce/AWS_EdXWeek5Cloud9.git
+    
+    # Pushes the changes in your local repository up to the remote repository you specified as the origin
+    git push -u origin master (may be prompted for username and password)
+
+To keep your repository updated after changes:
+
+    cd ~/repository
+    git status
+    git add .
+    git status
+    git commit -m "some message"
+    git push -u origin master (paste username and password)
+
+
+------------------------------
+
+git push <remote> <branch>
+
+remote = origin
+branch = master
+
+If you use "git push -u origin master", it pushes the "master" branch to "origin" remote and sets up tracking.  Next time, you can just do "git push" and it will push to origin master.
+
+------------------------------
+
+To add LICENSE file after repository is created, just create new file called LICENSE.  License picker will appear.
+Same with .gitignore.  Picker will appear.
+
+------------------------------
+
+To add the new repository in SourceTree, File > Open and select the folder.
+
+------------------------------
+
+To sync the local repository with changes made in Github:
+
+git 
+
+------------------------------
+
+## Connecting Github and Cloud9 instance
+
+https://docs.aws.amazon.com/cloud9/latest/user-guide/sample-github.html#sample-github-install-git
+
+Check if git is intalled in Cloud9 instance.  git --version.  It is.
+
+Set git config vars:
+
+    git config --global user.name "Brian Bruce"
+    git config --global user.email public1@brianbruce.org
+
+    edXProjectUser3:~/environment $ git config -l
+    core.editor=/usr/bin/nano
+    user.name=Brian Bruce
+    user.email=public1@brianbruce.org
+
+Create the Git repo in Github, but do not add any files like README.MD, or .gitignore, etc (otherwise, you will get errors)
+
+Copy the URL for the repo.
+
+In your Cloud9 instance, run these commands:
+
+From: https://help.github.com/articles/adding-an-existing-project-to-github-using-the-command-line/
+
+    # Initialize the local directory as a Git repository.
+    git init 
+    
+    # # Adds the files in the local repository and stages them for commit. 
+    git add . 
+    
+    # Commit the files that you've staged in your local repository.
+    git commit -m "first commit" 
+    
+    # Sets the new remote
+    git remote add origin https://github.com/brbruce/AWS_EdXWeek5Cloud9.git
+    
+    # Pushes the changes in your local repository up to the remote repository you specified as the origin
+    git push -u origin master (may be prompted for username and password)
+
+--------------------------------------------
+
+Steps to sync local changes to remote origin:
+
+git status
+
+Will show modified but unstaged files, and untracked new files
+
+Stage modified files and add new files: Can use wildcards on dirs (**/) and files
+
+git add .c9/*
+git add exercise-rds/FlaskApp/__pycache__/database.cpython-36.pyc
+git add ex-cognito.zip exercise-cognito/
+
+If you delete a local file, you can commit it using either git add or git rm.  Both work.  (git rm will also delete the file locally.)
+You can also just do a commit -a and it will commit the delete without doing git add.
+
+git status
+
+git commit -m "Completed ex 9 Cognito integration"
+git push -u origin master
+
+git status
+
+Can diff changes if you want:
+
+git diff .c9/metadata/tab1
+
+-------------------------------------------
+
+To unstage a staged file:
+
+git reset HEAD <file>
+
+-------------------------------------------
+
+To delete checked in files from git but keep locally:
+
+If you checked in files which you later want to ignore, they will still appear in git status.
+Use git rm --cached <file> to delete them from the repository.  This will not delete them locally.
+
+git rm -f --cached .c9/*
+
+-------------------------------------------
+
+.gitignore
+.gitignore_global
+.git/info/exclude
+
+/ - Root of ignored files and dirs is from the local of the global gitignore file.
+Can only use # for comments at the beginning of a line, not in the line.  No block comments.
+/dir will match a file named dir; /dir/ would not.
+Both would match a directory named dir.
+/dir/ and /dir/* are equivalent.
+
+.git/info/exclude - Allow local ignores without changing master .gitignore from the repository.
+This file will not be commited to the repo.
+https://help.github.com/articles/ignoring-files/#explicit-repository-excludes
+
+--------------------------------------------

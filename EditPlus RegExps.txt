@@ -1,0 +1,67 @@
+EditPlus RegExp
+=====================
+
+Only supports a limited number of expressions:
+
+Expression Description 
+\t Tab character. 
+\n New line. 
+. Matches any character. 
+| Either expression on its left and right side matches the target string. For example, "a|b" matches "a" and "b". 
+[] Any of the enclosed characters may match the target character. For example, "[ab]" matches "a" and "b". "[0-9]" matches any digit. 
+[^] None of the enclosed characters may match the target character. For example, "[^ab]" matches all character EXCEPT "a" and "b". "[^0-9]" matches any non-digit character. 
+* Character to the left of asterisk in the expression should match 0 or more times. For example "be*" matches "b", "be" and "bee". 
++ Character to the left of plus sign in the expression should match 1 or more times. For example "be+" matches "be" and "bee" but not "b". 
+? Character to the left of question mark in the expression should match 0 or 1 time. For example "be?" matches "b" and "be" but not "bee". 
+^ Expression to the right of ^ matches only when it is at the beginning of line. For example "^A" matches an "A" that is only at the beginning of line. 
+$ Expression to the left of $ matches only when it is at the end of line. For example "e$" matches an "e" that is only at the end of line. 
+() Affects evaluation order of expression and also used for tagged expression. 
+\ Escape character. If you want to use character "\" itself, you should use "\\". 
+
+Tagged Expressions using "()"s are referenced using \1, \2, \3, etc
+
+----------------------------------
+
+Does not support \S, \s.  Need to use [ ] or [^ ] to include/exclude spaces.
+
+
+----------------------------------
+To format a DataRecord:
+
+Find: ([^/]),
+Replace With: \1\n
+
+----------------------------------
+
+To extract part of a string:
+
+Before:	"   columnName      colType   colDesc"
+After:	"columnName"
+
+Search: ^[ ]*([^ ]+).*$
+Replace: \1
+
+-----------------------------------
+
+To convert Exclude list to Installshield format:
+
+Ex.  From:
+
+ 126. lchbank 
+
+To:
+
+en=lchbank;
+
+
+Find: ^[^a-zA-Z]*(.*)
+Replace with: en=\1;
+
+Next:
+
+Find: \n
+Replace with: <nothing>
+
+----------------------------------------
+
+

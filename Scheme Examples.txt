@@ -1,0 +1,29 @@
+(let* ( (f (lambda (x) (lambda (y) (- x y) )))
+        (g (f 2)) )
+  (g 4))
+  
+
+;; I get it now.
+;;
+;; f is defined as an anonymous function which takes a variable 'x', and returns ANOTHER FUNCTION
+;; which takes another variable 'y'.
+;; 
+;; g is defined as THE FUNCTION which is returned by calling (f 2).  Remember, f returns a function,
+;; in which 'x' is already defined as 2.  The function is "(lambda (y) (- 2 y) )"
+;;
+;; Finally, we call function g and pass in 4 as the parameter,
+;; which is assigned to 'y'.  The function gets evaluated as "(lambda (4) (- 2 4) )"  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
