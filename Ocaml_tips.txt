@@ -1,0 +1,399 @@
+OCaml
+
+----------------------------------------------------
+Lecture 1
+
+strong type-ing. Expressions evaluate to a value of a type.
+
+End expressions with ;;  Can specify multiple expressions with one final ;;
+
+(* comments *)
+
+"a" ^ "b" - Concatenate
+
+lists and pattern matching:
+list values must all be of the same type.  ; separated.
+[1;2;3] - int list type
+[[1];[2;3];[4;5;6]] - (int list) list type
+1::2::[] - construct list by prepending (right to left) (:: = "cons")
+[1;2;3]@[5;6] - Combine 2 lists
+
+(* hd and tl do not work in OCaml even though the slide says they do... *)
+hd[5;4;3] = 5 - head of a list.  Non empty list only
+tl[5;4;3] = 3 
+
+tuples - lists of things of any type, comma-separated. Fixed size, cannot grow.
+(1,"b",[1;2;3]} - tuple of 3 things
+
+let x = 1;; - bind value of expression to a variable
+let y = 1 in 4+y; - y is only bound in the "in" expression 
+let (x,y,z) = ("a",[6;7], 14);;
+let hd::tl = [1;2;3;4;5];; - hd = 1 (int), tl = [2;3;4;5]
+
+functions:
+let inc = fun x->x+1;; - named function
+inc 3;; = 4
+(fun x->x+1) 4;; - anonymous function. Pass value to run immediately.
+(fun x->x+1)4;; - Space not required after ()
+let inc x = x+1;; - shortcut for named function
+let f a b c = [a;b;c];; - function f takes multiple parameters a b c
+
+# let f g a = if (g a > a) then (string_of_int a)^" is smaller" else (string_of_int a)^" is larger";;
+val f : (int -> int) -> int -> string = <fun>
+# f (fun b->b+1) 5;;
+- : string = "5 is smaller"
+# f (fun b->b-1) 5;;
+- : string = "5 is larger"
+
+'a - unknown type?  Any type?
+
+let negation1 = fun f-> fun x-> not (f x) ;; 
+	Defines a function called negation1 which takes a parameter f which is a function.  negation1 return another
+	function which takes a parameter x and runs (f x) and then negates the result.
+# negation1 (fun h->if (h<10) then false else true) 5;;
+	Is the same as (negation1 (fun h->if (h<10) then false else true)) 5;;
+- : bool = true
+# negation2 (fun h->if (h<10) then false else true) 20;;
+- : bool = false
+
+
+let negation2 f x = not (f x) ;;
+val negation2 : ('a -> bool) -> 'a -> bool = <fun>
+	Defines a function called negation2 which takes a parameter f which is a boolean function, and a value.
+	negation2 runs the function passing in the value, and then returns the negative of the resluting boolean.
+	Actually exactly the same as negation1 above....
+# negation2 (fun h->if (h<10) then false else true) 5;;
+- : bool = true
+# negation2 (fun h->if (h<10) then false else true) 20;;
+- : bool = false
+
+NOTE: negation1 and negation2 are both curried functions (take one argument, and return a function which takes
+the next arg, etc.  negation2 looks like it takes multiple parameters but actually still processes one arg at a time.
+
+Type annotation:
+(x:int) - type annotation - requires x to be int only
+let fn x:int = ... - Function result can have type annotation too.  
+	Doesn't mean x is type int.  For that, use 
+	let fn (x:int):int = ...
+
+Pattern matching:
+Patterns: [], ::, constants and pattern variables
+let is_empty l =
+	match l with
+          [] -> true
+        | (h::t) -> false;; 
+
+let f p = e is shorthand for let f x = match x with p -> e 
+	Apply the pattern p to the value x, which generates additional value, which are used in the expression e.
+"_" = wildcard.  Means don't care what the value is.  Matches anything but does not bind	
+let hd (h::_) = h
+let tl (_::t) = t
+let f (x::y::_) = x + y
+	f [2;3;4;5];; = 5 (from 2 and 3)
+let g [x; y] = x + y
+let f (x,y) (z,w) = x + z
+	Can have more than 1 pattern, must pass in more than one value.
+	f (1,2) (3,4);; = 4 (from 1 and 3)
+
+Recursive functions:
+Need "rec" keyword in func definition
+
+let rec filter f l =
+    match l with
+    	[] -> []
+		| (h::t) -> if f h then h::(filter f t)
+		              else (filter f t) ;;
+					  
+	NOTE: filter is a boolean function, like (fun x->x > 0).  Filter the first item in the list.  If it matches,
+	add it to the beginning of a list, and check the rest of the list.  If it does not match, skip the first
+	item and check the rest of the list.  Each recursion builds the filtered list on the way down, and returns
+	the list on the way back up.
+	
+# g(fun i->i+1)1;;
+Error: This function has type 'a -> int
+       It is applied to too many arguments; maybe you forgot a `;'.
+	   
+    NOTE: This error is because g only takes 1 argument, but there are 2 specified: (fun i->i+1) and 1 (remember
+	that no space is needed after ()s.  You have to put parens around the function and value if you want the function
+	to be executed before passing the result into g function.
+	
+# g((fun i->i+1)1);;
+- : int = 0	
+
+---------------------------------------------------
+Lecture 2
+
+(a, b) matches a tuple with 2 elements 
+-Matches (1, 3), binding a to 1 and b to 3
+
+a::b matches lists with at least one element  
+-Matches [1;2;3], binding a to 1 and b to [2;3]
+(_::_) - List with at least one element but we don't care what the value is.
+
+a::b::[] matches lists with exactly two elements  
+-Matches [1;2], binding a to 1 and b to 2  
+-Could also write pattern a::b::[] as [a;b]
+
+(a, (c, d)::r ) matches a tuple with two elements, with the second element being a list of tuples. 
+- (1, [(2,3);(4,5)]) a=1, c=2, d=3, r=[(4,5)]
+
+Ex. 
+# let f (a, (c, d)::r ) = (a,c,d,r);;
+# f (1, [(2,3);(4,5)]);;
+- : int * int * int * (int * int) list = (1, 2, 3, [(4, 5)])
+
+Using wildcard for debugging:
+let _ = Printf.printf "Hello world!\n"
+
+	let _ matches everything, and does not define any variable and is not very useful. 
+	Such constructs are useful when the right hand side has side effects, like printf.
+
+NOTE: to ue printf, you need to run "open Printf;;" first.
+
+Higher-order function - Passing functions as arguments:
+
+NOTE: To use map, you must specify as "List.map", or call "open List;;" first, and then you can use "map".
+NOTE: To use fold, use List.fold_left.  List.fold_left f a [b1; ...; bn]
+		List.fold_right f [a1; ...; an] b
+
+See http://caml.inria.fr/pub/docs/manual-ocaml/libref/List.html for definitions of map and fold_left/fold_right
+
+map f l - applies function f to each element of l, and puts the results in a new list (preserving order) 
+map (fun x -> (-x)) [1; 2; 3] = [-1; -2; -3]
+
+fold f l - Iterate through list and apply function to each element, keeping track of partial results computed so far
+let rec fold f a l = match l with
+       [ ] -> a
+	   | (h::t) -> fold f (f a h) t ;;
+a = accumulator
+
+build sum using fold
+
+build reverse using fold
+
+map and fold (map/reduce)
+
+fold-left vs fold-right
+
+tail recursion:
+recursive call followed immediately by a return
+No action between a rec call and return.  (Huh?)
+tail rec functions don't require stack frame for each call (huh?)
+Use an accumulator to build up result and return it in the base case (hit bottom, then return a value?)
+
+-------------------------------------------------------------------
+Lecture 3
+
+User defined types
+
+
+--------------------------------------------------------------------
+
+
+HW 5
+==========
+2.1
+---------
+# open List;;
+# map (fun x->abs x) [-1;2;-3;4;-12;10];;
+- : int list = [1; 2; 3; 4; 12; 10]
+
+# fold_left (+) 0 [1;2;3;4];;
+- : int = 10
+
+// These all work the same...
+# fold_left max 0 [1; 2; 3; 4; 12; 10];;
+- : int = 12
+
+# fold_left (fun a x-> max a x) 0 [1; 2; 3; 4; 12; 10];;
+- : int = 12
+
+# fold_left (fun a x-> if (a > x) then a else x) 0 [1; 2; 3; 4; 12; 10];;
+- : int = 12
+
+
+Combine map and fold:
+let mabsv l = fold_left max 0 (map (fun x->abs x) l);;
+
+
+# let mabsv l = fold_left max 0 (map (fun x->abs x) l);;
+val mabsv : int list -> int = <fun>
+# mabsv [-1;2;-3;4;-12;10];;
+- : int = 12
+
+# let mabsv l = fold_left (fun a x-> if (a > x) then a else x) 0 (map (fun x->abs x) l);;
+val mabsv : int list -> int = <fun>
+# mabsv [-1;2;-3;4;-12;10];;
+- : int = 12
+
+2.2
+----------
+https://stackoverflow.com/questions/14328600/ocaml-looking-at-a-specific-digit-of-an-int
+let digits n =
+    let rec loop n acc =
+        if n = 0 then acc
+        else loop (n/10) (n mod 10::acc) in
+    match n with
+    | 0 -> [0]
+    | _ -> loop n []
+
+
+let digits s = 
+    let rec aux n nb_chars accu = match n with
+        | 0 -> (if nb_chars=0 then accu else (aux 0 (nb_chars-1) (0::accu)))
+        | _ -> aux (n/10) (nb_chars - 1) (n mod 10::accu)
+        in
+    let rec init_list = function  // Build list of 0s of size n
+        | 0 -> []
+        | n -> 0 :: (init_list (n-1))
+        in
+    if s=(String.make (String.length s) '0') // Build string of 0s of same length as string s.
+    then (init_list (String.length s))
+    else aux (int_of_string s) (String.length s) [] ;;
+	
+	
+
+
+
+
+2.3
+----------
+Prefix sum - new list where each number is the total of all the numbers in the original list up to that point.
+
+fold over the original list, use a [] new list as the accumulator.  function gets the accumulator list and the next number in the list.
+
+Get the last number in the accum list (which is the prev total), and add the next number to get the new total.  Append the new number to the tail
+of the accum list and call the functino again.  Something like that....
+
+[1;3;4;5]
+[], 1 
+[1], 3
+[1;4], 4
+[1;4;8], 5
+[1;4;8;13] done
+
+
+let reverse l = fold_left (fun x y -> y::x) [] l;;
+
+let psum l = 
+	reverse (fold_left (fun x y -> match x with
+		[]-> [y]
+		| (h::_)->((h+y)::x))
+		[] l);;
+
+
+----------------------------------------------
+
+File type and modules
+
+Source file:  *.ml
+Compile to bytecode: 
+
+
+#mod_use "proj2.ml" <----------- Imports as a module.  Requires prefixing functions with Proj2.
+#use "
+
+
+
+
+
+
+-----------------------------------------------
+
+Debugging
+
+Printf.printf (Printf module)
+print_string (basic ocaml)
+
+Printing out debug info:
+-------------------------
+Before an expression:
+
+  else
+	let () = print_string "woa" in <---- Add the debug statement like this.  Just this line.
+    let x = true
+     in if x = true
+     then answer
+     else
+       (let y = findAge limits (fst(answer) - 1, snd(answer))
+        in if y != (0, 0)
+        then y
+        else findAge limits (fst(answer), snd(answer) - 1));;
+
+
+In a case-expression: 
+---------------------
+let rec factorial = function
+  | n when n<0 -> raise (Failure "undefined: positive integer is required.")  
+  | 0 -> 0
+  | 1 -> ignore (Printf.printf "1\n"); 1 <--------------  Add "ignore (print stuff); before the value.
+  | n -> ignore (Printf.printf "%d*" n); n * factorial (n-1) 
+;;
+val factorial : int -> int = <fun>   
+
+At the execution you will end with.
+
+factorial 10;;  
+10*9*8*7*6*5*4*3*2*1
+- : int = 3628800                              
+
+
+Trace a function:
+----------------------
+https://ocaml.org/learn/tutorials/debug.html
+
+Ex: 
+# let rec fib x = if x <= 1 then 1 else fib (x - 1) + fib (x - 2);;
+val fib : int -> int = <fun>
+# #trace fib;;
+fib is now traced.
+# fib 3;;
+fib <-- 3
+fib <-- 1
+...
+fib --> 2
+fib --> 3
+- : int = 3
+# #untrace fib;;
+fib is no longer traced.
+
+
+
+-----------------------------------------------
+
+
+WSL Install OCaml
+
+sudo apt-get update
+sudo apt install ocaml (Installs ocaml interpreter 4.05.0 - same as ilabs)
+sudo apt install opam (ocaml package manager)
+opam init (takes a while)
+
+Need to run the eval, add a line to .profile and add .ocamlinit file:
+
+	1. To configure OPAM in the current shell session, you need to run:
+
+		  eval `opam config env`
+
+	2. To correctly configure OPAM for subsequent use, add the following
+	   line to your profile file (for instance ~/.profile):
+
+		  . /home/brian/.opam/opam-init/init.sh > /dev/null 2> /dev/null || true
+
+	3. To avoid issues related to non-system installations of `ocamlfind`
+	   add the following lines to ~/.ocamlinit (create it if necessary):
+
+		  let () =
+			try Topdirs.dir_directory (Sys.getenv "OCAML_TOPLEVEL_PATH")
+			with Not_found -> ()
+		  ;;
+
+
+https://opam.ocaml.org/blog/about-utop/
+Utop lets you edit and recall commands.  Also autocomplete using tab.  Alt+right and left arrow to move autocomplete, and alt+down to select.
+#utop_help
+#utop_bindings (alt is meta key M)
+
+Installation:
+sudo apt-get install m4 (needed for utop)
+opam install utop
