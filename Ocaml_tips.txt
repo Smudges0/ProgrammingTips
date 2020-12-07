@@ -1,6 +1,6 @@
 OCaml
 
-----------------------------------------------------
+-------------------------------------------------------
 Lecture 1
 
 strong type-ing. Expressions evaluate to a value of a type.
@@ -296,6 +296,122 @@ Compile to bytecode:
 
 
 
+-------------------------------------------------------------------------------------------------
+
+Multiple ways to declare functions:
+------------------------------------
+
+https://dev.realworldocaml.org/variables-and-functions.html#scrollNav-2
+
+(fun x y -> x + y);; // Anonymous function.  Parens needed because it is usually part of another expression.
+
+let add = (fun x y -> x+y);; // Uses fun keyword
+
+let add = fun x y -> x+y;; // Parens not needed unless it's part of another expression.
+
+let add x y = x+y; // No fun keyword.  Syntactic sugar.
+
+fun allows multiple arguments, but no pattern match on right-hand side.
+
+
+
+
+fun vs function
+------------------
+
+http://caml.inria.fr/pub/docs/manual-ocaml/expr.html#sss:expr-function-definition
+	
+https://stackoverflow.com/questions/1604270/what-is-the-difference-between-the-fun-and-function-keywords
+	"function allows the use of pattern matching (i.e. |), but consequently it can be passed only one argument."
+	"fun does not allow pattern matching, but can be passed multiple arguments"
+	
+	
+Multiple ways to match values - match vs function
+--------------------------------------------------
+"function" is just syntactic sugar for match!
+
+https://stackoverflow.com/questions/43005259/explanation-of-ocaml-match-and-function-discrepencies/43005314
+	"When using the keyword function, you mustn't write the argument's name in the function declaration since it's no longer needed."
+	"'let f = function ...' is strictly equivalent to 'let f x = match x with ...'
+	"Note that function is not special argument syntax or anything like that, but simply defines a one-argument anonymous function. It is shorthand for fun x -> match x with ..."
+
+https://stackoverflow.com/questions/33266050/the-difference-of-the-function-keyword-and-match-with-in-ocaml
+
+https://www2.lib.uchicago.edu/keith/ocaml-class/pattern-matching.html
+	"OCaml has syntactic sugar that allows you to do pattern matching directly in lambda expressions. This is never necessary, because you can always ignore it and use match directly, but it can lead to more concise code. You can do this with the function keyword; the syntax is: function pattern-matching and it's exactly equivalent to fun x -> match x with pattern-matching."
+	"You can also use function to define functions of more than one argument, but only when you want to use the pattern matching on the last parameter (and you can only do the pattern matching on that one parameter; of course, you can freely apply match to other parameters in any of the function clauses)"
+	
+1) let is_alpha = function 'a' .. 'z' | 'A' .. 'Z' -> true | _ -> false;;
+val is_alpha : char -> bool = <fun>
+
+// Uses function keyword but does not explicitly specify the argument.  Why not?  Implicitly expects a single parameter.
+// First pattern does not usually start with '|', but it can.
+
+
+2) let is_alpha =
+    function
+    | 'a' .. 'z' -> true
+    | 'A' .. 'Z' -> true
+    | _ -> false;;
+val is_alpha : char -> bool = <fun>
+
+// This is same as #1 except with leading '|' and lowercase and uppercase are separate checks instead of combined.
+// Can be reformatted as:
+let is_alpha = function | 'a' .. 'z' -> true | 'A' .. 'Z' -> true | _ -> false;;
+
+
+3) let is_alpha a = match a with 'a' .. 'z' -> true | 'A' .. 'Z' -> true | _ -> false;;
+val is_alpha : char -> bool = <fun>
+
+// No function keyword but does specify the argument 'a'. Directly calls match.
+
+
+4) let is_alpha a =
+    match a with
+    | 'a' .. 'z' -> true
+    | 'A' .. 'Z' -> true
+    | _ -> false;;
+val is_alpha : char -> bool = <fun>
+// This is the same as #3 but with '|' on the first match as well.
+
+
+Pattern matching and functions - Right-hand side and left-hand side.
+--------------------
+Functions which use the "function" keyword allow pattern matching in the function (right-hand side).  (See above)
+
+You can also do pattern matching on any function results using "let" (left-hand side)
+
+Ex.
+let (ints,strings) = List.unzip [(1,"one"); (2,"two"); (3,"three")];;
+val ints : int list = [1; 2; 3]
+val strings : string list = ["one"; "two"; "three"]
+
+
+In match expressions, you can have variables on the left-hand side of the patterns, which get bound at the same time they are matched.
+Ex 1.
+
+let safe_division n = function
+| 0 -> failwith "divide by 0"
+| m -> n / m
+
+This function takes 2 args: n and an implicit arg for the function/match.  The second argument is used as the match value.  If it is 0, the first pattern matches.  But if it is not 0, it will match the second pattern because m is not bound to anything.  And m will become the second arg, and return n / m.
+
+safe_division 3 0;;
+Exception: Failure "divide by 0".
+
+safe_division 3 1;;
+- : int = 3
+
+Ex 2.
+
+let rec mem x list =
+	match list with 
+	  [] -> false
+	| hd::tl -> hd = x || mem x tl
+      ;;
+	  
+hd and tl will match any non-empty list, and hd will be the first element, and tl will be the rest of the list.
+
 
 
 -----------------------------------------------
@@ -397,3 +513,7 @@ Utop lets you edit and recall commands.  Also autocomplete using tab.  Alt+right
 Installation:
 sudo apt-get install m4 (needed for utop)
 opam install utop
+
+
+
+
