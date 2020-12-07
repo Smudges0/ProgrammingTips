@@ -1,0 +1,94 @@
+# Run and debug CUDA code using vscode remote:ssh and cuda-gdb
+
+Using WinSCP, connect to ilabs server and create a new directory for the vscode project.  Copy files from the PC.
+
+vscode - Install Remote-SSH extension.  This connects to a linux server using ssh (like WSL)
+	Command: Remote-SSH: Connect to host...
+		ssb170@crayon.cs.rutgers.edu
+		Host type is Linux
+		Click "Open Folder" in vscode explorer
+		Open the project folder on the project directory.  (Have to enter your password a couple times)
+		You should be able to see your files in the vscode explorer and open a linux terminal.
+
+
+---------------------
+
+The ilabs server seems to disconnect very quickly and you keep needing to reenter the password.
+
+Maybe set up an ssh key so you can stay connected.
+
+Maybe enabling SSH keepalive will help.  
+
+    ssh -o "ServerAliveInterval 60" <SERVER_ADDRESS>
+
+If you want to enable this on all your sessions, put this in your /etc/ssh/ssh_config or ~/.ssh/config:
+
+    ServerAliveInterval 60
+
+See https://superuser.com/questions/699676/how-to-prevent-ssh-from-disconnecting-if-its-been-idle-for-a-while
+
+---------------------
+
+CUDA binaries are not in the PATH.  Need to add them.  You can add to .bash-profile to make it permanent.
+	PATH=$PATH:/usr/local/cuda-11.0/bin
+		
+In linux, create a symlink to cuda-gdb, but call it gdb:  That way vscode can debug it.
+
+	ln -s /usr/local/cuda-11.0/bin/cuda-gdb gdb
+
+vscode - Install C/C++ extension in the remote server.  
+
+Click on the Debug icon in vscode and edit launch.json.  Select cppdbg as the debug type.
+
+--------------------------------
+
+launch.json which runs local gdb which is a link to cuda-gdb:
+
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "(gdb) Launch",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/match",
+            "args": ["-input", "testcases/input1.mtx"],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "miDebuggerPath": "/ilab/users/ssb170/handshake/gdb",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                }
+            ]
+        }
+    ]
+}
+
+The most important line is "miDebuggerPath": "/ilab/users/ssb170/handshake/gdb"
+
+From: https://github.com/Microsoft/vscode-cpptools/issues/2599
+
+
+--------------------------------
+
+To enable "set cuda memcheck on" when debugging from vscode, create a ".cuda-gdbinit" file in your home directory:
+
+cat /ilab/users/ssb170/.cuda-gdbinit 
+set cuda memcheck on
+
+This will get run each time cuda-gdb is started.
+
+For more on cudo-gdb including sample debugging sessions (very useful):
+https://hpc.oit.uci.edu/nvidia-doc/cuda-doc/pdf/CUDA_GDB.pdf
+
+----------------------------------
+
