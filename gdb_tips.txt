@@ -294,19 +294,21 @@ $10 = (int *) 0x7fffffffd6dc
 ----------------------------
 Mystery solved:
 
+NOTE: This page is helpful, but not accurate.  The stack does NOT look the way he says it should look. See below for real stack!!!!
 https://eli.thegreenplace.net/2011/02/04/where-the-top-of-the-stack-is-on-x86/
 
 On x86, the stack grows "up" from high memory to low memory addressed.
 
-When GDB says "locals at 0xADDRESS", on this (and other "stack grows down" machines), it means "locals are below 0xADDRESS.
+When GDB says "locals at 0xADDRESS", on this (and other "stack grows down" machines), it means "locals are below 0xADDRESS."
 (https://stackoverflow.com/questions/65820112/memory-address-of-variable-does-not-match-with-info-frame-output-of-gdb)
 
 SP vs BP:
-ESP (32bit) and RSP (64bit) are frame stack pointers which keep moving as the function executes.
-EBP and RBP don't change.
+(NOTE: This explanation also does not seem correct.  RSP and RBP always are the same from my testing.  Neither changes.)
+ESP (32bit) and RSP (64bit) are frame stack pointers which keep moving as the function executes. (False?)
+EBP and RBP don't change. (true)
 Since esp keeps moving as the function executes, ebp (base pointer, also known as frame pointer in other architectures) 
 is used as a convenient anchor relatively to which all function arguments and locals can be found. 
-Arguments are above ebp in the stack (hence the positive offset when accessing them), while locals are below ebp in the stack.
+Arguments are above ebp in the stack (hence the positive offset when accessing them), while locals are below ebp in the stack. (False!)
 
 
 Example:
