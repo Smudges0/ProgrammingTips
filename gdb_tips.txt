@@ -356,6 +356,10 @@ Stack:
 0x7fffffffdcb0
 
 
+NOTE: Use info frame to view frame stack pointers.
+Use "p $sp" to print $sp, $rsp and $rbp.
+Use "p &a" to print a, b, c, xx, yy, zz, sum args and local.
+
 ----------------------------------------------------
 Memory:
 
