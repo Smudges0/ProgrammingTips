@@ -1,6 +1,7 @@
 GDB tips
 ========================
 More tips:
+https://web.eecs.umich.edu/~sugih/pointers/gdbQS.html - Quick start (good)
 https://darkdust.net/files/GDB%20Cheat%20Sheet.pdf - Quick reference
 https://gist.github.com/rkubik/b96c23bd8ed58333de37f2b8cd052c30 - Git gist
 https://cs.brown.edu/courses/cs033/docs/guides/gdb.pdf - Short document
@@ -29,6 +30,8 @@ Breakpoint 1, main () at /home/simon/cs416-operating-systems/project1/sigHandler
 33
 34              z = x / y;
 
+(gdb) s <---- step - execute one line. Will step into functions.
+(gdb) n <---- next - execute line.  Will step over functions.
 
 -------------------------------------------------------
 
@@ -287,4 +290,80 @@ signum is listed as an arg, and should be in Arglist at 0x7fffffffd6f0+.  But it
 
 (gdb) p &signum
 $10 = (int *) 0x7fffffffd6dc
+
+----------------------------
+Mystery solved:
+
+https://eli.thegreenplace.net/2011/02/04/where-the-top-of-the-stack-is-on-x86/
+
+On x86, the stack grows "up" from high memory to low memory addressed.
+
+When GDB says "locals at 0xADDRESS", on this (and other "stack grows down" machines), it means "locals are below 0xADDRESS.
+(https://stackoverflow.com/questions/65820112/memory-address-of-variable-does-not-match-with-info-frame-output-of-gdb)
+
+SP vs BP:
+ESP (32bit) and RSP (64bit) are frame stack pointers which keep moving as the function executes.
+EBP and RBP don't change.
+Since esp keeps moving as the function executes, ebp (base pointer, also known as frame pointer in other architectures) 
+is used as a convenient anchor relatively to which all function arguments and locals can be found. 
+Arguments are above ebp in the stack (hence the positive offset when accessing them), while locals are below ebp in the stack.
+
+
+Example:
+
+----------------------------------------------------
+Code:
+
+int foobar(int a, int b, int c)
+{
+    int xx = a + 2;
+    int yy = b + 3;
+    int zz = c + 4;
+    int sum = xx + yy + zz;
+
+    return xx * yy * zz + sum;
+}
+
+int main()
+{
+    return foobar(77, 88, 99);
+}
+
+----------------------------------------------------
+Stack:
+
+0x000000000000 <-------- Bottom of memory.  Stacks grows "up" from high memory to low memory
+--------------
+// Frame 0 - foobar()
+0x7fffffffdc74 <------- Arg: c
+0x7fffffffdc78 <------- Arg: b
+0x7fffffffdc7c <------- Arg: a
+0x7fffffffdc80 <------- Local: xx
+0x7fffffffdc84 <------- Local: yy
+0x7fffffffdc88 <------- Local: zz
+0x7fffffffdc8c <------- Local: sum
+0x7fffffffdc90 <------- Foobar frame: SP, RSP, RBP
+			   <------- ArgsList: args: a=77, b=88, c=99
+			   <------- Locals: xx = 79, yy = 91, zz = 103, sum = 273
+0x7fffffffdc98 <------- prev return value (0x4004fb)
+--------------
+// Frame 1 - main()
+0x7fffffffdca0 <------- Main frame: SP, RSP, RBP
+			   <------- ArgsList: 
+			   <------- Locals:
+0x7fffffffdca8 <------- prev return value (uninit)
+--------------
+0x7fffffffdcb0
+
+
+----------------------------------------------------
+Memory:
+
+(gdb) x/40wx 0x7fffffffdc70
+0x7fffffffdc70: 0xf7de3b40        (0x00000063)      (0x00000058)      (0x0000004d)	   : foobar: ????, c, b, a
+0x7fffffffdc80: (0x0000004f)      (0x0000005b)      (0x00000067)      (0x00000111)	   : foobar: xx, yy, zz, sum
+0x7fffffffdc90: (0xffffdca0 0x00007fff)      (0x004004fb 0x00000000)		               : foobar: RBP, return address
+0x7fffffffdca0: (0x00400500 0x00000000)      (0xf7a03bf7 0x00007fff)		               : main: RBP, return address
+0x7fffffffdcb0:
+
 
