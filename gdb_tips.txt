@@ -1,0 +1,290 @@
+GDB tips
+========================
+More tips:
+https://darkdust.net/files/GDB%20Cheat%20Sheet.pdf - Quick reference
+https://gist.github.com/rkubik/b96c23bd8ed58333de37f2b8cd052c30 - Git gist
+https://cs.brown.edu/courses/cs033/docs/guides/gdb.pdf - Short document
+
+
+
+gdb sigHandler   <----------  start debugger on program
+
+(gdb) break main <-------------- Set breakpoint in main.  Can also set breakpoint using line number in file.
+
+(gdb) run  <------------ start running program
+Starting program: /home/simon/cs416-operating-systems/project1/sigHandler 
+
+Breakpoint 1, main () at /home/simon/cs416-operating-systems/project1/sigHandler.c:30
+30              int x = 5, y = 0, z = 0;
+
+(gdb) list <------------- View source
+25      }
+26
+27      int main()
+28      {
+29
+30              int x = 5, y = 0, z = 0;
+31
+32              signal(SIGFPE, floating_point_exception_handler);
+33
+34              z = x / y;
+
+
+-------------------------------------------------------
+
+(gdb) disassemble <------------------------------- List instructions and addresses (current function)
+Dump of assembler code for function main:
+   0x00005555555546d7 <+0>:     push   %rbp
+   0x00005555555546d8 <+1>:     mov    %rsp,%rbp
+   0x00005555555546db <+4>:     sub    $0x10,%rsp
+   0x00005555555546df <+8>:     movl   $0x5,-0xc(%rbp)
+   0x00005555555546e6 <+15>:    movl   $0x0,-0x8(%rbp)
+   0x00005555555546ed <+22>:    movl   $0x0,-0x4(%rbp)
+   0x00005555555546f4 <+29>:    lea    -0x71(%rip),%rsi        # 0x55555555468a <floating_point_exception_handler>
+   0x00005555555546fb <+36>:    mov    $0x8,%edi
+   0x0000555555554700 <+41>:    callq  0x555555554560 <signal@plt>
+   0x0000555555554705 <+46>:    mov    -0xc(%rbp),%eax
+   0x0000555555554708 <+49>:    cltd   
+=> 0x0000555555554709 <+50>:    idivl  -0x8(%rbp)
+   0x000055555555470c <+53>:    mov    %eax,-0x4(%rbp)
+   0x000055555555470f <+56>:    lea    0xb2(%rip),%rdi        # 0x5555555547c8
+   0x0000555555554716 <+63>:    callq  0x555555554550 <puts@plt>
+   0x000055555555471b <+68>:    mov    $0x0,%eax
+   0x0000555555554720 <+73>:    leaveq 
+   0x0000555555554721 <+74>:    retq   
+End of assembler dump.
+
+------------------------------------------------------------
+
+(gdb) disassemble /m main <------------------------- List source code and instructions for main function
+Dump of assembler code for function main:
+25      {
+   0x00005555555546d7 <+0>:     push   %rbp
+   0x00005555555546d8 <+1>:     mov    %rsp,%rbp
+   0x00005555555546db <+4>:     sub    $0x10,%rsp
+
+26
+27              int x = 5, y = 0, z = 0;
+   0x00005555555546df <+8>:     movl   $0x5,-0xc(%rbp)
+   0x00005555555546e6 <+15>:    movl   $0x0,-0x8(%rbp)
+   0x00005555555546ed <+22>:    movl   $0x0,-0x4(%rbp)
+
+28
+29              signal(SIGFPE, floating_point_exception_handler);
+   0x00005555555546f4 <+29>:    lea    -0x71(%rip),%rsi        # 0x55555555468a <floating_point_exception_handler>
+   0x00005555555546fb <+36>:    mov    $0x8,%edi
+   0x0000555555554700 <+41>:    callq  0x555555554560 <signal@plt>
+
+30
+31              z = x / y;
+   0x0000555555554705 <+46>:    mov    -0xc(%rbp),%eax
+   0x0000555555554708 <+49>:    cltd
+=> 0x0000555555554709 <+50>:    idivl  -0x8(%rbp)
+   0x000055555555470c <+53>:    mov    %eax,-0x4(%rbp)
+
+32
+33              printf("I live again!\n");
+   0x000055555555470f <+56>:    lea    0xb2(%rip),%rdi        # 0x5555555547c8
+   0x0000555555554716 <+63>:    callq  0x555555554550 <puts@plt>
+
+34
+35              return 0;
+   0x000055555555471b <+68>:    mov    $0x0,%eax
+
+36      }
+   0x0000555555554720 <+73>:    leaveq 
+   0x0000555555554721 <+74>:    retq   
+
+End of assembler dump.
+
+-----------------------------------------------------------------------
+
+layout asm  <----- Popup window for instructions
+layout src
+ctrl+x+a - Close the window
+
+------------------------------------------------------------------------
+
+Display memory
+x/number format unit
+format = 
+
+
+x/20wx $sp  <----- Show 60 values. w = word (8 bytes) (default). x = hex format (default)  $sp = stack pointer 
+0x7fffffffd6f8: 0xf7a21040      0x00007fff      0x00000007      0x00000000
+0x7fffffffd708: 0x00000000      0x00000000      0x00000000      0x00000000
+0x7fffffffd718: 0x00000000      0x00007fff      0x00000000      0x00000000
+0x7fffffffd728: 0xffffdbe0      0x00007fff      0xf7dced80      0x00007fff
+0x7fffffffd738: 0x00000008      0x00000000      0x00000202      0x00000000
+
+x/10g $sp <----- Show as giant (16 bytes) (hex format by default)
+0x7fffffffd6f8: 0x00007ffff7a21040      0x0000000000000007
+0x7fffffffd708: 0x0000000000000000      0x0000000000000000
+0x7fffffffd718: 0x00007fff00000000      0x0000000000000000
+0x7fffffffd728: 0x00007fffffffdbe0      0x00007ffff7dced80
+0x7fffffffd738: 0x0000000000000008      0x0000000000000202
+
+
+
+Variables:
+
+$sp - Stack pointer address (Stack)
+$fp - frame pointer address 
+$pc - program counter address`
+$rip - Instruction pointer address.  Same as program pointer
+
+Print variables
+
+p signum
+$1 = 8
+
+p &signum
+$5 = (int *) 0x7fffffffd6dc
+
+(gdb) x/w &signum
+0x7fffffffd6dc: 0x00000008
+
+p $sp
+$1 = (void *) 0x7fffffffdc90
+
+---------------------------------------------------------------------------
+
+Frames - execution stack.
+
+bt <--------- backtrace - list execution stack
+
+(gdb) bt
+#0  floating_point_exception_handler (signum=8) at sigHandler.c:15
+#1  <signal handler called>
+#2  0x00000000004005b6 in main () at sigHandler.c:31
+
+
+(gdb) info frame 0 <--------- View frame info (also "i f"
+Stack frame at 0x7fffffffd700:
+ rip = 0x400542 in floating_point_exception_handler (sigHandler.c:15); saved rip = 0x7ffff7a21040
+ called by frame at 0x7fffffffdc90
+ source language c.
+ Arglist at 0x7fffffffd6f0, args: signum=8  <----------------------------  NOTE: Arg signum address is BEFORE arglist address!!!!
+ Locals at 0x7fffffffd6f0, Previous frame's sp is 0x7fffffffd700
+ Saved registers:
+  rbp at 0x7fffffffd6f0, rip at 0x7fffffffd6f8
+
+frame 0 <---- switch to top frame
+up <---- switch to prev frame (0 _> 1 -> 2...) - Not intuitive
+down <---- switch to upper frame
+
+
+
+
+---------------------------------------------------------------------------
+
+Project 1:
+
+1) Get value of program counter register at divby0 instruction
+2) Get number of bytes from that instruction to the start of the next print instruction and save as a constant to put into the program.
+3) Get address of program counter register (does not change)
+4) Get address of signum parameter in signal handler call
+5) Calculate the offset from the signum parameter address to the program counter register, and save as a constant to put into the program.
+6) In interrupt handler, get signum address, add the offset to the prog counter register, which contains the original address to the divby0 instruction.  
+	NOTE: you need to put the 64bit pointer address into a char * pointer, so you can update it with the correct number of bytes.  If you use an int * pointer, if you add 1, it actually adds 4 bytes because an int is 4 bytes
+	A char is 1 byte.
+7) Update the value of the address in the program counter register and add the number of bytes to skip to the next print.
+
+(gdb) x/60x $sp
+0x7fffffffd6d0: 0x00000000      0x00000000      0xf7deee6b      0x00000008 <---------------- signum parameter with value 0x00000008 (SIGFPE = 8) stored at 0x7fffffffd6dc (only 4 bytes because it is an int)
+0x7fffffffd6e0: 0x00000000      0x00000000      0xffffd9f0      0x00007fff
+0x7fffffffd6f0: 0xffffdca0      0x00007fff      0xf7a21040      0x00007fff
+0x7fffffffd700: 0x00000007      0x00000000      0x00000000      0x00000000
+0x7fffffffd710: 0x00000000      0x00000000      0x00000000      0x00007fff
+0x7fffffffd720: 0x00000000      0x00000000      0xffffdbe0      0x00007fff
+0x7fffffffd730: 0xf7dced80      0x00007fff      0x00000008      0x00000000
+0x7fffffffd740: 0x00000202      0x00000000      0x55554580      0x00005555
+0x7fffffffd750: 0xffffdd80      0x00007fff      0x00000000      0x00000000
+0x7fffffffd760: 0x00000000      0x00000000      0x00000000      0x00000000
+0x7fffffffd770: 0xffffd9f0      0x00007fff      0xffffdca0      0x00007fff
+0x7fffffffd780: 0x00000000      0x00000000      0x00000000      0x00000000
+0x7fffffffd790: 0x00000005      0x00000000      0x00000000      0x00000000
+0x7fffffffd7a0: 0xffffdc90      0x00007fff      0x55554709      0x00005555 <------------------ Prog counter for div/0 instruction address 0x0000555555554709 is at 0x7fffffffd7a0 + 8 bytes = 0x7fffffffd7a8 (little endian so right half first)
+0x7fffffffd7b0: 0x00010206      0x00000000      0x00000033      0x002b0000
+
+
+Program counter (instruction pointer) value before the divby0:  0x0000555555554709
+
+=> 0x0000555555554709 <+50>:    idivl  -0x8(%rbp)
+
+Get address of program counter register (rip) by checking the stack and looking for the value 4709:  Address of the program counter = 0x7fffffffd7a0
+
+0x7fffffffd7a0: 0xffffdc90      0x00007fff      0x55554709      0x00005555
+
+To make the program resume from the interrupt handler and skip the divideby0 and go to the print statement, we need to update the program counter register with the original value PLUS the number of bytes to skip. (6)
+
+31              z = x / y;
+   0x0000555555554705 <+46>:    mov    -0xc(%rbp),%eax
+   0x0000555555554708 <+49>:    cltd
+=> 0x0000555555554709 <+50>:    idivl  -0x8(%rbp)   <========================  From here, skip to....
+   0x000055555555470c <+53>:    mov    %eax,-0x4(%rbp)
+
+32
+33              printf("I live again!\n");
+   0x000055555555470f <+56>:    lea    0xb2(%rip),%rdi        # 0x5555555547c8 <============= here.  50 -> 56 = 6 bytes increase.
+   
+To find the address of the program counter register programmatically, get the address of the signum parameter, and the address of the program counter register once manually in gdb.
+
+Program counter register address = 0x7fffffffd7a8 (see above)
+signum address = 0x7fffffffd6dc
+
+d7a8 - d6dc = cc = 204
+
+Code:
+
+const int OFFSET_SIGNUM = 204;
+const int DIV_INSTR_LENGTH = 6;
+
+void floating_point_exception_handler(int signum)
+{
+
+	printf("I am slain!\n");
+
+	/* Do your tricks here */
+	char *signumAddr = &signum;
+	char *progCounter = signumAddr + OFFSET_SIGNUM;
+	*progCounter = *progCounter + DIV_INSTR_LENGTH;  <--- Will execute the print statement AFTER the divby0
+}
+
+
+
+
+
+------------------------------------------------------------------------------
+
+ Mystery: Why is signum parameter stored in the stack pointer section of memory, not in the frame?
+ 
+(gdb) x/20 $sp
+0x7fffffffd6d0: 0x00000000      0x00000000      0xf79f39d0      0x00000008
+0x7fffffffd6e0: 0x006f1ab7      0x00000000      0x0040033b      0x00000000
+0x7fffffffd6f0: 0xffffdca0      0x00007fff      0xf7a21040      0x00007fff
+0x7fffffffd700: 0x00000007      0x00000000      0x00000000      0x00000000
+0x7fffffffd710: 0x00000000      0x00000000      0x00000000      0x00007fff
+(gdb) x/20 $fp
+0x7fffffffd6f0: 0xffffdca0      0x00007fff      0xf7a21040      0x00007fff
+0x7fffffffd700: 0x00000007      0x00000000      0x00000000      0x00000000
+0x7fffffffd710: 0x00000000      0x00000000      0x00000000      0x00007fff
+0x7fffffffd720: 0x00000000      0x00000000      0xffffdbe0      0x00007fff
+0x7fffffffd730: 0xf7dced80      0x00007fff      0x00000008      0x00000000
+
+(gdb) i f
+Stack level 0, frame at 0x7fffffffd700:
+ rip = 0x40054e in floating_point_exception_handler (sigHandler.c:18); saved rip = 0x7ffff7a21040
+ called by frame at 0x7fffffffdc90
+ source language c.
+ Arglist at 0x7fffffffd6f0, args: signum=8  <============================= signum is listed as an arg, and should be in Arglist at 0x7fffffffd6f0+
+ Locals at 0x7fffffffd6f0, Previous frame's sp is 0x7fffffffd700
+ Saved registers:
+  rbp at 0x7fffffffd6f0, rip at 0x7fffffffd6f8
+
+
+signum is listed as an arg, and should be in Arglist at 0x7fffffffd6f0+.  But it's address is actually 0x7fffffffd6dc (before the args section)
+
+(gdb) p &signum
+$10 = (int *) 0x7fffffffd6dc
+
