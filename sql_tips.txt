@@ -43,3 +43,32 @@ from Frequents f
 where f.bar not in 
 (select s.bar from Sells s where s.bar = f.bar and s.beer in (
 select l.beer from Likes l where l.drinker = f.drinker));
+
+-- What is the bar with the highest average price of beer that it sells
+
+-- method 1, calculate max price, find bar with average price that equals max price
+select a.bar from 
+(select s.bar, avg(s.price) as avg_price from Sells s group by s.bar) a
+where a.avg_price = (select max(b.avg_price) as max_price from (select s.bar, avg(s.price) as avg_price from Sells s group by s.bar) b);
+
+-- variation on method 1
+select a.bar from 
+(select s.bar, avg(s.price) as avg_price from Sells s group by s.bar) a,
+(select max(b.avg_price) as max_price from (select s.bar, avg(s.price) as avg_price from Sells s group by s.bar) b) c
+where a.avg_price = c.max_price;
+
+-- method 2, left join table against itself, filter for records where there exists a higher price. Highest price will have no matching join, so higher price column will be null
+select a.bar from 
+(select s.bar, avg(s.price) as avg_price from Sells s group by s.bar) a
+left join
+(select s.bar, avg(s.price) as avg_price from Sells s group by s.bar) b 
+on a.avg_price < b.avg_price
+where b.bar is null;
+
+-- method 3, calculate average price for each bar, sort highest to top and get first row
+select s.bar from Sells s group by s.bar order by avg(s.price) desc limit 1;
+
+-- Find all bars whose names consist of more than one word
+select name from Bars where name like "% %";
+
+select name from Bars where INSTR(name, ' ') > 0;
