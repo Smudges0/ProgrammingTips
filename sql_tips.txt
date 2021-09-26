@@ -1,0 +1,45 @@
+SELECT avg(price)FROM Sells WHERE beer in ("Budweiser", "Bud");
+
+SELECT bar, MIN(price)FROM Sells WHERE beer = "Budweiser" GROUP BY bar;
+
+SELECT beer, AVG(price)FROM Sells GROUP BY beer HAVING COUNT(bar) >= 3;
+
+SELECT bar FROM Sells GROUP BY bar HAVING COUNT(beer) <= 2;
+
+select distinct b.name from Bars b left join(select s.bar from Sells s where s.price >5) a  on a.bar=b.name where a.bar IS NULL;
+
+select distinct A.drinker from (select l.drinker, count(*) as Number from Likes l group by l.drinker Having Number =2) A, Likes B where B.drinker = A.drinker;
+
+select l.drinker from Likes l group by l.drinker Having count(*) =2;
+
+-- Question 1 in three different ways
+-- Beers which are not served by Gecko Grill
+select b.name from Beers b where name not in (select beer from Sells s where s.bar = "Gecko Grill");
+select b.name from Beers b where not exists (select s.beer from Sells s where s.bar = "Gecko Grill" and b.name = s.beer);
+select b.name from Beers b left join (select s.beer from Sells s where s.bar = "Gecko Grill") a on b.name = a.beer where a.beer is null;
+
+-- Drinkers who like all beers which Justin Likes
+select l.beer from Likes l where l.drinker = "Justin";
+select count(*) from Likes l where l.drinker = "Justin";
+select l.drinker, l.beer from Likes l where l.beer in (select l2.beer from Likes l2 where l2.drinker = "Justin") and l.drinker != "Justin";
+select m.drinker from (select l.drinker, l.beer from Likes l where l.beer in (select l2.beer from Likes l2 where l2.drinker = "Justin") and l.drinker != "Justin") m group by m.drinker having count(*) = (select count(*) from Likes l where l.drinker = "Justin");
+
+-- Pairs of drinkers and bars such that a drinker frequents the bar and the bar serves no beer which the drinker likes
+
+-- method 1
+select f.drinker, f.bar
+-- select f.drinker, f.bar, count(l.drinker) 
+-- select * 
+from Frequents f 
+join Sells s on f.bar = s.bar
+left join Likes l on l.drinker = f.drinker and l.beer = s.beer -- If beer served by bar is not liked by drinker, l.drinker and l.beer will be null.
+group by f.drinker, f.bar
+having count(l.beer) = 0 -- Get count of beers liked by f.drinker served by f.bar (beers not liked will be null and not counted)
+;
+
+-- method 2
+select distinct f.drinker, f.bar
+from Frequents f 
+where f.bar not in 
+(select s.bar from Sells s where s.bar = f.bar and s.beer in (
+select l.beer from Likes l where l.drinker = f.drinker));
